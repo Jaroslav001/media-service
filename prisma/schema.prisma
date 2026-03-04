@@ -1,0 +1,85 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model File {
+  id           String     @id @default(cuid())
+  externalRef  String?
+  accountId    String
+  createdBy    String?
+  disk         String     @default("s3")
+  bucket       String
+  objectKey    String     @unique
+  originalName String
+  mimeType     String
+  sizeBytes    BigInt
+  status       FileStatus @default(UPLOADING)
+  metadata     Json?
+  errorMessage String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  uploadSession UploadSession?
+  conversions   Conversion[]
+
+  @@index([accountId])
+  @@index([externalRef])
+  @@index([status])
+}
+
+model UploadSession {
+  id            String     @id @default(cuid())
+  fileId        String     @unique
+  s3UploadId    String?
+  uploadMode    UploadMode
+  chunkSize     Int
+  uploadedParts Json       @default("[]")
+  bytesUploaded BigInt     @default(0)
+  expiresAt     DateTime
+  completedAt   DateTime?
+  file          File       @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+}
+
+model Conversion {
+  id           String           @id @default(cuid())
+  fileId       String
+  preset       String
+  objectKey    String
+  mimeType     String
+  sizeBytes    BigInt?
+  width        Int?
+  height       Int?
+  status       ConversionStatus @default(PENDING)
+  errorMessage String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  file         File             @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@unique([fileId, preset])
+}
+
+enum FileStatus {
+  UPLOADING
+  PROCESSING
+  READY
+  FAILED
+}
+
+enum UploadMode {
+  SINGLE
+  MULTIPART
+}
+
+enum ConversionStatus {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
+}
