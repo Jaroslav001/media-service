@@ -122,6 +122,11 @@ export class UploadsController {
           file: result,
           error: null,
         });
+
+        // Trigger processing asynchronously (same as single complete)
+        if (result.status === 'processing') {
+          this.processing.startProcessing(result.file_id).catch(() => {});
+        }
       } catch (err: any) {
         items.push({
           file_id: upload.file_id,
