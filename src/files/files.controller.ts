@@ -1,8 +1,10 @@
 import {
   Controller,
   Get,
+  Patch,
   Param,
   Query,
+  Body,
   UseGuards,
   Request,
   NotFoundException,
@@ -29,6 +31,29 @@ export class FilesController {
     if (!file) throw new NotFoundException('File not found');
 
     return { data: this.mapFile(file) };
+  }
+
+  @Patch(':fileId')
+  async updateFile(
+    @Param('fileId') fileId: string,
+    @Body() body: { external_ref?: string },
+    @Request() req,
+  ) {
+    const file = await this.prisma.file.findFirst({
+      where: { id: fileId, accountId: req.user.accountId },
+    });
+
+    if (!file) throw new NotFoundException('File not found');
+
+    const updated = await this.prisma.file.update({
+      where: { id: fileId },
+      data: {
+        ...(body.external_ref !== undefined ? { externalRef: body.external_ref } : {}),
+      },
+      include: { conversions: true },
+    });
+
+    return { data: this.mapFile(updated) };
   }
 
   @Get()
