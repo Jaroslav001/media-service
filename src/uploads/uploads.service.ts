@@ -181,6 +181,10 @@ export class UploadsService {
       );
     }
 
+    // Ensure the original file is publicly readable (belt-and-suspenders for
+    // both single presigned uploads and multipart uploads on DO Spaces)
+    await this.s3.setObjectAcl(file.objectKey, 'public-read');
+
     // Mark file as PROCESSING, update session
     const updated = await this.prisma.file.update({
       where: { id: fileId },

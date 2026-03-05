@@ -9,6 +9,7 @@ import {
   CompleteMultipartUploadCommand,
   AbortMultipartUploadCommand,
   ListPartsCommand,
+  PutObjectAclCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Readable } from 'stream';
@@ -65,6 +66,7 @@ export class S3Service {
       url,
       headers: {
         'Content-Type': contentType,
+        'x-amz-acl': 'public-read',
       },
     };
   }
@@ -176,6 +178,15 @@ export class S3Service {
       ACL: 'public-read',
     });
 
+    await this.client.send(command);
+  }
+
+  async setObjectAcl(objectKey: string, acl: string): Promise<void> {
+    const command = new PutObjectAclCommand({
+      Bucket: this.bucket,
+      Key: objectKey,
+      ACL: acl as any,
+    });
     await this.client.send(command);
   }
 
