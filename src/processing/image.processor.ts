@@ -44,7 +44,7 @@ export class ImageProcessor {
     try {
       await s3.downloadToFile(objectKey, tmpSource);
 
-      let pipeline = sharp(tmpSource);
+      let pipeline = sharp(tmpSource).rotate(); // auto-orient based on EXIF
 
       if (config.fit === 'cover') {
         pipeline = pipeline.resize(config.width, config.height, { fit: 'cover' });
